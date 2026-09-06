@@ -13,18 +13,19 @@ A Codex-ready Streamlit app that combines **actual payroll/timekeeping hours** w
 - Optional DOT HOS checks when the required data is available.
 - Sends Slack, email, or Twilio SMS notifications when configured.
 - Includes `monitor.py` for scheduled/cron alerting with de-duplication.
+- Includes a connector layer for live payroll/timekeeping and Amazon DSP schedule feeds.
 
 ## Run in Codex / terminal
 
 ```bash
-cd akairos_hours_guard
+cd akairos
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Open the local URL shown by Streamlit (usually `http://localhost:8501`).
+Open the local URL shown by Streamlit, usually `http://localhost:8501`.
 
 ## Test
 
@@ -43,7 +44,42 @@ python monitor.py \
   --channel stdout
 ```
 
-For a real deployment, configure `.env` from `.env.example` and schedule `monitor.py` every 15-30 minutes using your hosting platform's cron/scheduler.
+For a real deployment, configure `.env` from `.env.example` and schedule `monitor.py` every 15-30 minutes using your hosting platform scheduler.
+
+## Live connector mode
+
+AKAIROS can load standardized payroll/timekeeping and DSP schedule rows from configured connectors instead of weekly uploads. Supported connector modes are:
+
+- `file`: read a managed CSV/XLSX export path.
+- `http`: read an authenticated API endpoint that returns CSV or JSON rows.
+
+Example `.env` setup:
+
+```bash
+PAYROLL_CONNECTOR_TYPE=http
+PAYROLL_API_URL=https://payroll.example.com/export/weekly-hours
+PAYROLL_API_TOKEN_ENV=PAYROLL_API_TOKEN
+
+DSP_SCHEDULE_CONNECTOR_TYPE=http
+DSP_SCHEDULE_API_URL=https://dsp-schedule.example.com/export/remaining-shifts
+DSP_SCHEDULE_API_TOKEN_ENV=DSP_SCHEDULE_API_TOKEN
+```
+
+Keep `PAYROLL_API_TOKEN` and `DSP_SCHEDULE_API_TOKEN` in the runtime environment or secret manager. Do not put real token values in `.env.example`, source files, screenshots, tickets, or committed config.
+
+To run the scheduled monitor from connectors:
+
+```bash
+python monitor.py --use-connectors --channel stdout
+```
+
+To keep AKAIROS refreshing from payroll/timekeeping and DSP schedule feeds every two hours:
+
+```bash
+python monitor.py --use-connectors --channel slack --repeat-hours 2
+```
+
+For hosted deployments, an external scheduler or cron job can run the one-shot command every two hours instead of keeping a long-running process alive.
 
 ## Notification channels
 
@@ -51,15 +87,16 @@ For a real deployment, configure `.env` from `.env.example` and schedule `monito
 - SMS: Twilio credentials + sender number
 - Email: SMTP credentials
 
-Do not store Amazon credentials in this repo. Connect the DSP Scheduling Portal through an approved export/API or controlled integration. The app is designed so the schedule source can be replaced later without changing the alert engine.
+Do not store Amazon credentials in this repo. Connect the DSP Scheduling Portal through an approved export/API or controlled integration. The app is designed so the schedule source can be replaced without changing the alert engine.
 
 ## Rule notes
 
 The code distinguishes policy/compliance limits from AKAIROS management thresholds:
+
 - 30h: planning / benefit-status watch.
 - 40h: overtime warning.
 - 50h: AKAIROS management critical threshold.
-- 60h rolling seven-day: Amazon working-hours policy limit (except special/emergency situations).
+- 60h rolling seven-day: Amazon working-hours policy limit, except special/emergency situations.
 - 12h/day and 10h rest between shifts: Amazon Supplier working-hours limits.
 - DOT HOS checks are applied only when relevant fields are available.
 

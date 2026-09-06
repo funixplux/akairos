@@ -10,6 +10,11 @@ def test_approaching_40():
     assert "APPROACHING_40" in codes(a)
 
 
+def test_watch_30():
+    a=AssociateWeek("1","Driver",actual_hours=24,scheduled_remaining_hours=6)
+    assert "WATCH_30" in codes(a)
+
+
 def test_overtime_40():
     a=AssociateWeek("1","Driver",actual_hours=32,scheduled_remaining_hours=10)
     assert "OVERTIME_40" in codes(a)

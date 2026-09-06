@@ -1,10 +1,13 @@
 .venv/
 __pycache__/
 .pytest_cache/
+.streamlit-home/
+
 .env
 runtime/
 browser_profile/
 *.db
 *.sqlite
 *.sqlite3
+
 .DS_Store
