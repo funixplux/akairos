@@ -5,3 +5,4 @@ xlrd>=2.0
 requests>=2.32
 python-dotenv>=1.0
 pytest>=8.0
+playwright>=1.55
