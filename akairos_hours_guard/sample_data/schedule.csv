@@ -1,0 +1,6 @@
+employee_id,name,date,hours,station,manager,dot_regulated,phone,email
+A014,DA 014,2026-09-04,10,DVA5,Manager A,no,,
+A027,DA 027,2026-09-04,9.8,DVA5,Manager A,no,,
+A042,DA 042,2026-09-04,10,DMD2,Manager B,no,,
+A053,DA 053,2026-09-04,8.5,DMD2,Manager B,no,,
+D008,DOT DA 08,2026-09-04,10,DVA5,Manager C,yes,,
