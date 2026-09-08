@@ -2,12 +2,13 @@
 __pycache__/
 .pytest_cache/
 .streamlit-home/
-
+*.pyc
 .env
 runtime/
+runtime_inputs/
 browser_profile/
+hours_guard.db
 *.db
 *.sqlite
 *.sqlite3
-
 .DS_Store
