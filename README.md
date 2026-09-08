@@ -1,103 +1,140 @@
 # AKAIROS Hours Guard
 
-A Codex-ready Streamlit app that combines **actual payroll/timekeeping hours** with **remaining scheduled hours** to warn before an associate reaches 30, 40, 50, or 60 hours.
+AKAIROS Hours Guard is a Streamlit payroll + scheduling early-warning system. It combines **actual hours already worked** with **future scheduled hours** and warns management before an associate crosses 30, 40, 50, or 60 hours.
 
-## What it does
+## What is implemented
 
-- Imports payroll/timekeeping CSV/XLSX.
-- Imports Amazon schedule/roster CSV/XLSX.
-- Lets you map columns when exports use different headers.
-- Calculates actual worked hours, remaining scheduled hours, and projected weekly hours.
-- Warnings at 30h, 40h, 50h; separate critical policy checks at 60h/week, 12h/day, and <10h rest.
-- Flags missing/incomplete punches.
-- Optional DOT HOS checks when the required data is available.
-- Sends Slack, email, or Twilio SMS notifications when configured.
-- Includes `monitor.py` for scheduled/cron alerting with de-duplication.
-- Includes a connector layer for live payroll/timekeeping and Amazon DSP schedule feeds.
+- AKAIROS Sunday–Saturday workweek
+- 30h planning/full-time watch
+- 40h overtime warning
+- 50h AKAIROS critical management threshold
+- 60h working-hours policy review point
+- 12h/day and 10h-rest review logic
+- DOT HOS checks when supporting data is available
+- Exact future shift/date where 30/40/50/60 is crossed
+- Separate **already worked** vs **scheduled to reach** alerts
+- Missing-punch/data-quality alerts
+- Payroll CSV/XLSX import with column mapping
+- Future schedule CSV/XLSX import with column mapping
+- Prevention of same-day schedule double counting when actual time already exists
+- DVA5/DMD2 and manager filtering
+- Downloadable manager action queue
+- Associate/manager roster enrichment
+- Owner + manager email/SMS routing
+- Slack webhook, SMTP email, and Twilio SMS notifications
+- Per-recipient alert de-duplication in SQLite
+- File/API live connectors
+- Watched browser/download folder helper (`sync_inputs.py`)
+- Amazon Working Hour Visibility JSON parser and local browser-capture helper
 
-## Run in Codex / terminal
+Actual timekeeping remains the source of truth. The app does not reduce punches, withhold pay, or automatically cancel shifts.
+
+## Run in Codex or locally
 
 ```bash
-cd akairos
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+pytest -q
 streamlit run app.py
 ```
 
-Open the local URL shown by Streamlit, usually `http://localhost:8501`.
+## Standardized source format
 
-## Test
+Automated payroll/schedule connectors use these columns:
 
-```bash
-pytest -q
+```text
+employee_id,name,date,hours,station,manager,dot_regulated,phone,email
 ```
 
-## Automated alert run
+Only the first four are required by the live connector. The remaining fields improve routing and filtering.
 
-The monitor expects standardized columns: `employee_id,name,date,hours,station,manager,dot_regulated,phone,email`.
+## Associate / manager roster
 
-```bash
-python monitor.py \
-  --payroll sample_data/payroll.csv \
-  --schedule sample_data/schedule.csv \
-  --channel stdout
+Use `sample_data/roster.csv` as the template:
+
+```text
+employee_id,name,station,manager,manager_email,manager_phone,dot_regulated,phone,email,active
 ```
 
-For a real deployment, configure `.env` from `.env.example` and schedule `monitor.py` every 15-30 minutes using your hosting platform scheduler.
+The roster lets the automated worker send alerts to the owner and the associate's assigned manager.
 
-## Live connector mode
+## File/API connectors
 
-AKAIROS can load standardized payroll/timekeeping and DSP schedule rows from configured connectors instead of weekly uploads. Supported connector modes are:
+Copy `.env.example` to `.env` and configure either file paths or approved HTTP endpoints:
 
-- `file`: read a managed CSV/XLSX export path.
-- `http`: read an authenticated API endpoint that returns CSV or JSON rows.
-
-Example `.env` setup:
-
-```bash
-PAYROLL_CONNECTOR_TYPE=http
-PAYROLL_API_URL=https://payroll.example.com/export/weekly-hours
-PAYROLL_API_TOKEN_ENV=PAYROLL_API_TOKEN
-
-DSP_SCHEDULE_CONNECTOR_TYPE=http
-DSP_SCHEDULE_API_URL=https://dsp-schedule.example.com/export/remaining-shifts
-DSP_SCHEDULE_API_TOKEN_ENV=DSP_SCHEDULE_API_TOKEN
+```text
+PAYROLL_CONNECTOR_TYPE=file
+PAYROLL_FILE_PATH=/path/to/payroll.csv
+DSP_SCHEDULE_CONNECTOR_TYPE=file
+DSP_SCHEDULE_FILE_PATH=/path/to/schedule.csv
+ROSTER_FILE_PATH=/path/to/roster.csv
 ```
 
-Keep `PAYROLL_API_TOKEN` and `DSP_SCHEDULE_API_TOKEN` in the runtime environment or secret manager. Do not put real token values in `.env.example`, source files, screenshots, tickets, or committed config.
+Or use `http` connector type with tokens stored only in environment variables.
 
-To run the scheduled monitor from connectors:
+Run connector mode once:
 
 ```bash
 python monitor.py --use-connectors --channel stdout
 ```
 
-To keep AKAIROS refreshing from payroll/timekeeping and DSP schedule feeds every two hours:
+Run it every two hours:
 
 ```bash
-python monitor.py --use-connectors --channel slack --repeat-hours 2
+python monitor.py --use-connectors --repeat-hours 2 --channel email
 ```
 
-For hosted deployments, an external scheduler or cron job can run the one-shot command every two hours instead of keeping a long-running process alive.
+## Watched export folder
 
-## Notification channels
+If browser or cloud-sync exports arrive in one folder:
 
-- Slack incoming webhook: `SLACK_WEBHOOK_URL`
-- SMS: Twilio credentials + sender number
-- Email: SMTP credentials
+```bash
+python sync_inputs.py --folder ~/Downloads --out-dir runtime_inputs
+```
 
-Do not store Amazon credentials in this repo. Connect the DSP Scheduling Portal through an approved export/API or controlled integration. The app is designed so the schedule source can be replaced without changing the alert engine.
+Then point file connectors at the stable files in `runtime_inputs/`.
 
-## Rule notes
+## Notifications
 
-The code distinguishes policy/compliance limits from AKAIROS management thresholds:
+Supported channels:
 
-- 30h: planning / benefit-status watch.
-- 40h: overtime warning.
-- 50h: AKAIROS management critical threshold.
-- 60h rolling seven-day: Amazon working-hours policy limit, except special/emergency situations.
-- 12h/day and 10h rest between shifts: Amazon Supplier working-hours limits.
-- DOT HOS checks are applied only when relevant fields are available.
+- Slack: `SLACK_WEBHOOK_URL`
+- Email: `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `ALERT_EMAIL`
+- SMS: Twilio credentials + `ALERT_PHONE`
 
-This software does not edit punches, withhold pay, or automatically cancel shifts. It alerts managers for review.
+By default manager alerts are enabled and associate alerts are disabled:
+
+```text
+SEND_MANAGER_ALERTS=true
+SEND_ASSOCIATE_ALERTS=false
+```
+
+Never commit `.env` or real employee/payroll exports.
+
+## Amazon DSP Scheduling support
+
+The repository includes:
+
+- `amazon_portal.py` — parses Amazon Working Hour Visibility JSON while keeping actual and rolling-scheduled concepts separate.
+- `amazon_browser_pull.py` — uses a persistent **local** Playwright browser profile so a user can authenticate interactively; no Amazon password is stored in source code.
+- `pages/2_Amazon_Site_Import.py` — manually reviews/imports the captured Working Hour Visibility JSON.
+- `pages/3_Live_Connectors.py` — shows live payroll/schedule connector readiness.
+
+For local browser capture:
+
+```bash
+playwright install chromium
+python amazon_browser_pull.py --login --url "$AMAZON_SCHEDULING_URL"
+python amazon_browser_pull.py --url "$AMAZON_SCHEDULING_URL"
+```
+
+A dated future schedule source is still used for exact threshold-crossing dates. The app does not assume Amazon's rolling scheduled-hour field equals remaining future hours.
+
+## Tests
+
+```bash
+pytest -q
+```
+
+The test suite covers Sunday–Saturday workweeks, actual-vs-planned overtime, 30/40/50/60 thresholds, daily/rest logic, DOT review logic, exact crossing dates, same-day double-count prevention, live file connectors, and repeating monitor behavior.
