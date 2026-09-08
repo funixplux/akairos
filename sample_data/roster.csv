@@ -1,0 +1,6 @@
+employee_id,name,station,manager,manager_email,manager_phone,dot_regulated,phone,email,active
+A014,DA 014,DVA5,Manager A,manager.a@example.com,,no,,,yes
+A027,DA 027,DVA5,Manager A,manager.a@example.com,,no,,,yes
+A042,DA 042,DMD2,Manager B,manager.b@example.com,,no,,,yes
+A053,DA 053,DMD2,Manager B,manager.b@example.com,,no,,,yes
+D008,DOT DA 08,DVA5,Manager C,manager.c@example.com,,yes,,,yes
