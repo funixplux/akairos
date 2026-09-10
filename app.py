@@ -138,7 +138,7 @@ with tab1:
 
 with tab2:
     st.subheader("Payroll / actual time")
-    pf = st.file_uploader("Payroll/timekeeping CSV or Excel", type=["csv","xlsx","xls"], key="payroll")
+    pf = st.file_uploader("Payroll/timekeeping CSV or Excel", type=["csv","xlsx","xls"], key="payroll_upload")
     if pf:
         pdf = read_table(pf); st.dataframe(pdf.head(10), use_container_width=True)
         pm = mapping_controls(pdf, "p")
@@ -149,7 +149,7 @@ with tab2:
             st.success(f"Loaded {len(st.session_state.actuals)} associates.")
 
     st.subheader("Amazon future schedule / roster")
-    sf = st.file_uploader("Schedule CSV or Excel", type=["csv","xlsx","xls"], key="schedule")
+    sf = st.file_uploader("Schedule CSV or Excel", type=["csv","xlsx","xls"], key="schedule_upload")
     if sf:
         sdf = read_table(sf); st.dataframe(sdf.head(10), use_container_width=True)
         sm = mapping_controls(sdf, "s")
@@ -160,7 +160,7 @@ with tab2:
             st.success(f"Loaded future shifts for {len(st.session_state.schedule)} associates.")
 
     st.subheader("Manager routing roster")
-    rf = st.file_uploader("Roster CSV or Excel", type=["csv","xlsx","xls"], key="roster")
+    rf = st.file_uploader("Roster CSV or Excel", type=["csv","xlsx","xls"], key="roster_upload")
     if rf:
         st.session_state.roster = normalize_roster(read_table(rf))
         st.dataframe(st.session_state.roster, use_container_width=True, hide_index=True)
