@@ -29,6 +29,14 @@ AKAIROS Hours Guard is a Streamlit payroll + scheduling early-warning system. It
 
 Actual timekeeping remains the source of truth. The app does not reduce punches, withhold pay, or automatically cancel shifts.
 
+## Cortex performance monitor (DVA5)
+
+`akos_performance_monitor/` reviews Cortex/Gmail daily report packs (DVIC PreTrip, Compliance Supplementary, break utilization, and related catalogs). See `akos_performance_monitor/README.md`. Run:
+
+```bash
+python -m akos_performance_monitor --reports akos_performance_monitor/reports
+```
+
 ## Run in Codex or locally
 
 ```bash

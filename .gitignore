@@ -12,3 +12,7 @@ hours_guard.db
 *.sqlite
 *.sqlite3
 .DS_Store
+akos_performance_monitor/reports/
+akos_performance_monitor/output/
+akos_performance_monitor/roster.csv
+akos_performance_monitor/monitor.log
