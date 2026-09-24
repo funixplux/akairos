@@ -61,11 +61,19 @@ def _is_dot_fleet(raw) -> bool:
     return any(tok in s for tok in DOT_FLEET_TOKENS)
 
 
+def _dvic_alert_max_seconds(dvic_cfg: dict) -> float:
+    """AKAIROS review cutover: 6 minutes for all fleets (not Amazon 90s/300s filename standards)."""
+    if "alert_max_seconds" in dvic_cfg and dvic_cfg["alert_max_seconds"] is not None:
+        return float(dvic_cfg["alert_max_seconds"])
+    if "alert_max_minutes" in dvic_cfg and dvic_cfg["alert_max_minutes"] is not None:
+        return float(dvic_cfg["alert_max_minutes"]) * 60.0
+    return 360.0
+
+
 def parse_dvic(path: Path, config: dict) -> dict:
-    """Flag drivers whose DVIC PreTrip duration exceeds NonDOT 90s / DOT 300s."""
+    """Flag drivers whose DVIC PreTrip duration exceeds the AKAIROS 6-minute (360s) alert cutover."""
     dvic_cfg = config.get("dvic", {})
-    nondot_max = float(dvic_cfg.get("nondot_max_seconds", 90))
-    dot_max = float(dvic_cfg.get("dot_max_seconds", 300))
+    threshold = _dvic_alert_max_seconds(dvic_cfg)
     aliases = config.get("aliases", {})
     driver_aliases = list(aliases.get("driver", DRIVER_ALIASES))
 
@@ -78,7 +86,10 @@ def parse_dvic(path: Path, config: dict) -> dict:
         "below_standard": [],
         "warnings": [],
         "status": "live",
-        "thresholds": {"nondot_max_seconds": nondot_max, "dot_max_seconds": dot_max},
+        "thresholds": {
+            "alert_max_seconds": threshold,
+            "alert_max_minutes": threshold / 60.0,
+        },
     }
     if not records:
         result["warnings"].append(
@@ -112,11 +123,10 @@ def parse_dvic(path: Path, config: dict) -> dict:
         fleet = get_cell(record, fleet_aliases)
         fleet_label = str(fleet).strip() if fleet is not None and str(fleet).strip() else "unknown"
         is_dot = _is_dot_fleet(fleet)
-        # Heuristic: if fleet column absent, treat as NonDOT (stricter 90s) and warn once.
-        threshold = dot_max if is_dot else nondot_max
         fleet_class = "DOT" if is_dot else "NonDOT"
         insp_date = get_cell(record, date_aliases)
         insp_date_s = str(insp_date).strip() if insp_date is not None else ""
+        # Same AKAIROS 6-minute alert for NonDOT and DOT (Amazon u90s/u300s stay classification-only).
         if seconds > threshold:
             result["below_standard"].append(
                 {
@@ -135,10 +145,6 @@ def parse_dvic(path: Path, config: dict) -> dict:
     if not found_duration:
         result["warnings"].append(
             "DVIC PreTrip: no duration columns matched configured aliases; thresholds not assessed."
-        )
-    if not any(get_cell(r, fleet_aliases) for r in records[:5]):
-        result["warnings"].append(
-            "DVIC PreTrip: fleet/DOT column not found; applying NonDOT 90s threshold by default."
         )
     return result
 

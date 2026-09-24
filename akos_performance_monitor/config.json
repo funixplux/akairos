@@ -44,8 +44,8 @@
     ]
   },
   "dvic": {
-    "nondot_max_seconds": 90,
-    "dot_max_seconds": 300,
+    "alert_max_minutes": 6,
+    "alert_max_seconds": 360,
     "duration_columns": [
       "DVIC Duration",
       "PreTrip Duration",

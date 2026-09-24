@@ -8,7 +8,7 @@ Does **not** sign in to Amazon, capture credentials, or bypass portal login.
 
 | Report kind | Recognition | Driver alerts | Notes |
 |---|---|---|---|
-| DVIC PreTrip `.xlsx` | live | live | NonDOT **90s** / DOT **300s** duration thresholds |
+| DVIC PreTrip `.xlsx` | live | live | AKAIROS alert: **6 minutes (360s)** for all fleets (`dvic.alert_max_seconds` / `alert_max_minutes`); Amazon u90s/u300s filenames are classification only |
 | Compliance Supplementary `.xlsx` | live | live when driver rows + metric columns exist | DSP-only aggregates never invent drivers |
 | Break utilization `.csv` | live | live when break-status columns match | Day packs from Cortex week files |
 | Uniform compliance `.xlsx` | live | live when compliance status columns match | |

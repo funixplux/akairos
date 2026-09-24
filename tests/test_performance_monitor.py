@@ -25,11 +25,13 @@ def _write_dvic(path: Path):
     ws = wb.active
     ws.title = "PreTrip"
     ws.append(["Driver Name", "Fleet Type", "Inspection Date", "DVIC Duration"])
-    ws.append(["Alex Rivera", "NonDOT Van", "2026-09-23", 45])
-    ws.append(["Blake Chen", "NonDOT Van", "2026-09-23", 120])  # over 90
-    ws.append(["Casey DOT", "DOT CDV", "2026-09-23", 250])  # under 300
-    ws.append(["Drew DOT", "DOT CDV", "2026-09-23", 340])  # over 300
-    ws.append(["Total", "", "", 755])
+    ws.append(["Alex Rivera", "NonDOT Van", "2026-09-23", 45])  # under 360
+    ws.append(["Blake Chen", "NonDOT Van", "2026-09-23", 120])  # under 360 (Amazon 90s only)
+    ws.append(["Casey DOT", "DOT CDV", "2026-09-23", 250])  # under 360
+    ws.append(["Drew DOT", "DOT CDV", "2026-09-23", 340])  # under 360 (Amazon 300s only)
+    ws.append(["Evan Long", "NonDOT Van", "2026-09-23", 400])  # over 360
+    ws.append(["Fran DOT", "DOT CDV", "2026-09-23", 420])  # over 360
+    ws.append(["Total", "", "", 1575])
     wb.save(path)
 
 
@@ -87,14 +89,32 @@ def test_dvic_thresholds(tmp_path, config):
     _write_dvic(path)
     result = parse_dvic(path, config)
     assert result["status"] == "live"
+    assert result["thresholds"]["alert_max_seconds"] == 360
+    assert result["thresholds"]["alert_max_minutes"] == 6
     drivers = {x["driver"]: x for x in result["below_standard"]}
-    assert "Blake Chen" in drivers
-    assert drivers["Blake Chen"]["threshold"] == 90
-    assert drivers["Blake Chen"]["fleet_class"] == "NonDOT"
-    assert "Drew DOT" in drivers
-    assert drivers["Drew DOT"]["threshold"] == 300
+    # Amazon filename 90s/300s are not the AKAIROS alert cutover
+    assert "Blake Chen" not in drivers
+    assert "Drew DOT" not in drivers
     assert "Alex Rivera" not in drivers
     assert "Casey DOT" not in drivers
+    assert "Evan Long" in drivers
+    assert drivers["Evan Long"]["threshold"] == 360
+    assert drivers["Evan Long"]["fleet_class"] == "NonDOT"
+    assert "Fran DOT" in drivers
+    assert drivers["Fran DOT"]["threshold"] == 360
+    assert drivers["Fran DOT"]["fleet_class"] == "DOT"
+
+
+def test_dvic_alert_max_minutes_config(tmp_path, config):
+    path = tmp_path / "dvic.xlsx"
+    _write_dvic(path)
+    cfg = dict(config)
+    cfg["dvic"] = {**config["dvic"], "alert_max_seconds": None, "alert_max_minutes": 6}
+    # Prefer seconds when present; minutes-only path
+    del cfg["dvic"]["alert_max_seconds"]
+    result = parse_dvic(path, cfg)
+    assert result["thresholds"]["alert_max_seconds"] == 360
+    assert {x["driver"] for x in result["below_standard"]} == {"Evan Long", "Fran DOT"}
 
 
 def test_compliance_metrics(tmp_path, config):
