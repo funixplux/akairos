@@ -22,7 +22,19 @@ Does **not** sign in to Amazon, capture credentials, or bypass portal login.
 2. Copy `roster.example.csv` → `roster.csv` and list scheduled drivers (`date,driver,scheduled`). Blank `date` = every day.
 3. Review `config.json` thresholds (examples for configuration — confirm against ops standards).
 4. Drop Cortex exports into `reports/` **or** configure IMAP for scheduled Gmail delivery.
-5. From repo root:
+5. **UI (recommended for etim):** from repo root run Hours Guard and open the **Performance Monitor** page, or launch the page alone:
+
+```bash
+streamlit run app.py
+# sidebar → Performance Monitor
+
+./run_performance_monitor.sh
+# or: streamlit run pages/4_Performance_Monitor.py
+```
+
+Upload Cortex files (or point at a reports folder), run the review (6-minute DVIC threshold), then optionally email `etimbassey@akairos.net`.
+
+6. **CLI:** from repo root:
 
 ```bash
 python -m akos_performance_monitor.monitor

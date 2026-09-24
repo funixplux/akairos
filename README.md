@@ -31,7 +31,19 @@ Actual timekeeping remains the source of truth. The app does not reduce punches,
 
 ## Cortex performance monitor (DVA5)
 
-`akos_performance_monitor/` reviews Cortex/Gmail daily report packs (DVIC PreTrip, Compliance Supplementary, break utilization, and related catalogs). See `akos_performance_monitor/README.md`. Run:
+`akos_performance_monitor/` reviews Cortex/Gmail daily report packs (DVIC PreTrip, Compliance Supplementary, break utilization, and related catalogs). See `akos_performance_monitor/README.md`.
+
+**Streamlit UI** (Hours Guard → sidebar page **Performance Monitor**, or standalone):
+
+```bash
+streamlit run app.py
+# open "Performance Monitor" in the sidebar
+# or standalone:
+./run_performance_monitor.sh
+# equivalent: streamlit run pages/4_Performance_Monitor.py
+```
+
+CLI:
 
 ```bash
 python -m akos_performance_monitor --reports akos_performance_monitor/reports

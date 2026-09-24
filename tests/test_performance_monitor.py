@@ -217,3 +217,43 @@ def test_cli_runs(reports_dir, tmp_path, config):
     assert rc == 0
     assert (out / "review_2026-09-24.txt").exists()
     assert (out / "review_2026-09-24.json").exists()
+
+
+def test_results_view_flatten(reports_dir, config):
+    from akos_performance_monitor.results_view import (
+        flatten_data_gaps,
+        flatten_flagged_drivers,
+        flatten_report_status,
+    )
+
+    result = evaluate_catalog(reports_dir, {}, config, as_of=__import__("datetime").date(2026, 9, 24))
+    flagged = flatten_flagged_drivers(result)
+    drivers = {r["driver"] for r in flagged}
+    assert "Evan Long" in drivers
+    assert "Fran DOT" in drivers
+    assert any(r["report"] == "dvic_pretrip" and r["threshold"] == 360 for r in flagged)
+    gaps = flatten_data_gaps(result)
+    assert any(g["kind"] == "tenure_workforce" for g in gaps)
+    status = flatten_report_status(result)
+    assert any(s["kind"] == "compliance_supplementary" for s in status)
+
+
+def test_bridge_smtp_env(monkeypatch):
+    from akos_performance_monitor.results_view import bridge_hours_guard_smtp_env, smtp_ready
+
+    monkeypatch.delenv("AKOS_SMTP_HOST", raising=False)
+    monkeypatch.delenv("AKOS_SMTP_FROM", raising=False)
+    monkeypatch.setenv("SMTP_HOST", "smtp.example.com")
+    monkeypatch.setenv("SMTP_FROM", "ops@akairos.net")
+    monkeypatch.setenv("SMTP_PORT", "587")
+    bridge_hours_guard_smtp_env()
+    assert smtp_ready() is True
+
+
+def test_performance_monitor_page_parses():
+    import ast
+    from pathlib import Path
+
+    src = Path(__file__).resolve().parents[1] / "pages" / "4_Performance_Monitor.py"
+    assert src.exists()
+    ast.parse(src.read_text(encoding="utf-8"))
