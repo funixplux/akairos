@@ -75,6 +75,7 @@ source_mode = st.radio(
     "How do you want to provide Cortex files?",
     ["Upload report files", "Use a reports folder"],
     horizontal=True,
+    index=1,  # folder path is the usual Cortex drop location
 )
 
 reports_dir: Path | None = None
@@ -125,9 +126,25 @@ elif roster_mode == "Upload CSV":
         roster = load_roster(tmp, as_of.isoformat())
         st.success(f"Loaded {len(roster)} scheduled driver(s)")
 
-run = st.button("Run performance review", type="primary", disabled=reports_dir is None)
+ready = bool(reports_dir and reports_dir.exists() and any(reports_dir.iterdir()))
+col_run, col_auto = st.columns([1, 2])
+with col_run:
+    run_clicked = st.button("Run performance review", type="primary", disabled=not ready)
+with col_auto:
+    auto_run = st.checkbox("Auto-run when reports are ready", value=True)
 
-if run:
+run_key = None
+if ready and reports_dir is not None:
+    names = sorted(p.name for p in reports_dir.iterdir() if p.is_file())
+    run_key = f"{reports_dir}|{as_of.isoformat()}|{override}|{','.join(names)}|{len(roster)}"
+
+should_run = False
+if run_clicked:
+    should_run = True
+elif auto_run and run_key and st.session_state.get("pm_run_key") != run_key:
+    should_run = True
+
+if should_run:
     if reports_dir is None or not reports_dir.exists():
         st.error("Provide report files or a valid reports folder.")
     else:
@@ -143,6 +160,7 @@ if run:
             st.session_state["pm_body"] = body
             st.session_state["pm_as_of"] = as_of.isoformat()
             st.session_state["pm_config"] = config
+            st.session_state["pm_run_key"] = run_key
 
 result = st.session_state.get("pm_result")
 body = st.session_state.get("pm_body")
@@ -213,4 +231,4 @@ if result:
         except Exception as exc:
             st.error(f"Send failed: {exc}")
 else:
-    st.info("Upload or select reports, then click **Run performance review**.")
+    st.info("Upload or select reports (auto-run is on by default for a folder with files).")
