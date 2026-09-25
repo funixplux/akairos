@@ -1,0 +1,109 @@
+{
+  "station": "DVA5",
+  "mail_subject_filter": "Supplementary Performance",
+  "mail_subject_filters": [
+    "Cortex",
+    "AKOS",
+    "DVA5",
+    "DVIC",
+    "Supplementary",
+    "Performance"
+  ],
+  "notify_to_default": "etimbassey@akairos.net",
+  "email_named_driver_details": true,
+  "stale_after_days": 8,
+  "stale_after_days_by_kind": {
+    "dvic_pretrip": 2,
+    "break_utilization": 3,
+    "compliance_supplementary": 10,
+    "uniform_compliance": 10
+  },
+  "expected_daily": ["dvic_pretrip"],
+  "expected_weekly": [
+    "compliance_supplementary",
+    "uniform_compliance",
+    "tenure_workforce",
+    "tenure_das",
+    "break_utilization"
+  ],
+  "expected_pdf_metadata": [
+    "da_daily_report",
+    "dsp_scorecard",
+    "pdf_dashboard"
+  ],
+  "aliases": {
+    "driver": [
+      "Driver",
+      "Driver Name",
+      "Delivery Associate",
+      "DA Name",
+      "Associate Name",
+      "Transporter",
+      "Transporter Name",
+      "Name"
+    ]
+  },
+  "dvic": {
+    "alert_max_minutes": 6,
+    "alert_max_seconds": 360,
+    "duration_columns": [
+      "DVIC Duration",
+      "PreTrip Duration",
+      "Pre-Trip Duration",
+      "Pre Trip Duration",
+      "Inspection Duration",
+      "Duration (Seconds)",
+      "Duration Seconds",
+      "Duration",
+      "Seconds"
+    ],
+    "fleet_columns": [
+      "Fleet Type",
+      "Vehicle Type",
+      "Asset Type",
+      "Van Type",
+      "DOT Status",
+      "Regulation"
+    ],
+    "date_columns": [
+      "Inspection Date",
+      "Date",
+      "Shift Date",
+      "Service Date",
+      "PreTrip Date",
+      "DVIC Date"
+    ]
+  },
+  "metrics": {
+    "DCR %": {
+      "columns": ["DCR", "DCR %", "Delivery Completion Rate"],
+      "direction": "min",
+      "threshold": 99.5
+    },
+    "POD %": {
+      "columns": ["POD", "POD %", "Photo on Delivery Acceptance Rate"],
+      "direction": "min",
+      "threshold": 99.0
+    },
+    "Speeding events": {
+      "columns": ["Speeding Events", "Speeding"],
+      "direction": "max",
+      "threshold": 0
+    },
+    "Distraction events": {
+      "columns": ["Distraction Events", "Distractions"],
+      "direction": "max",
+      "threshold": 0
+    },
+    "Following distance events": {
+      "columns": ["Following Distance Events", "Following Distance"],
+      "direction": "max",
+      "threshold": 0
+    },
+    "Sign or signal events": {
+      "columns": ["Sign Signal Events", "Sign/Signal Events"],
+      "direction": "max",
+      "threshold": 0
+    }
+  }
+}
